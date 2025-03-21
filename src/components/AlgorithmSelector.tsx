@@ -1,6 +1,12 @@
 "use client";
 
-const AlgorithmSelector = ({ algorithm, setAlgorithm, isRunning }) => {
+const AlgorithmSelector = ({
+  algorithm,
+  setAlgorithm,
+  isRunning,
+  gridSize,
+  setGridSize,
+}) => {
   return (
     <div className="p-4 bg-gray-100 rounded shadow-md">
       <h3 className="text-lg font-semibold mb-2">Select Algorithm:</h3>
@@ -58,6 +64,25 @@ const AlgorithmSelector = ({ algorithm, setAlgorithm, isRunning }) => {
             BFS by prioritizing paths that seem most promising.
           </p>
         )}
+      </div>
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700">
+          Grid Size:
+        </label>
+        <div className="flex items-center mt-1">
+          <input
+            type="range"
+            min="5"
+            max="50"
+            value={gridSize}
+            onChange={(e) => setGridSize(Number(e.target.value))}
+            disabled={isRunning}
+            className="w-full mr-2"
+          />
+          <span className="text-sm text-gray-600">
+            {gridSize}x{gridSize}
+          </span>
+        </div>
       </div>
     </div>
   );

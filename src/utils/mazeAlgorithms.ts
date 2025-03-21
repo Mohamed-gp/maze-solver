@@ -67,7 +67,8 @@ export const solveMaze = async (
   algorithm,
   setVisited,
   setPath,
-  speed
+  speed,
+  onNoPathFound = null
 ) => {
   const rows = maze.length;
   const cols = maze[0].length;
@@ -265,5 +266,75 @@ export const solveMaze = async (
     return { found: true, path };
   }
 
+  if (onNoPathFound) {
+    onNoPathFound(algorithm);
+  }
   return { found: false, path: [] };
+};
+
+export const compareAlgorithms = async (
+  maze,
+  start,
+  end,
+  setVisited,
+  setPath,
+  speed,
+  onShowResults = null,
+  onNoPathFound = null
+) => {
+  const algorithms = {
+    "A*": solveMaze.bind(
+      null,
+      maze,
+      start,
+      end,
+      "astar",
+      setVisited,
+      setPath,
+      speed,
+      onNoPathFound
+    ),
+    DFS: solveMaze.bind(
+      null,
+      maze,
+      start,
+      end,
+      "dfs",
+      setVisited,
+      setPath,
+      speed,
+      onNoPathFound
+    ),
+    BFS: solveMaze.bind(
+      null,
+      maze,
+      start,
+      end,
+      "bfs",
+      setVisited,
+      setPath,
+      speed,
+      onNoPathFound
+    ),
+  };
+
+  const results = {};
+
+  for (const [name, algorithm] of Object.entries(algorithms)) {
+    const startTime = performance.now();
+    const result = await algorithm();
+    const endTime = performance.now();
+    results[name] = {
+      found: result.found,
+      time: endTime - startTime,
+      path: result.path,
+      algorithm: name,
+    };
+  }
+
+  if (onShowResults) {
+    onShowResults(results);
+  }
+
+  return results;
 };

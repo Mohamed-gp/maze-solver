@@ -5,7 +5,12 @@ import MazeGrid from "../components/MazeGrid";
 import AlgorithmSelector from "../components/AlgorithmSelector";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { generateMaze, solveMaze } from "../utils/mazeAlgorithms";
+import Modal from "../components/Modal";
+import {
+  generateMaze,
+  solveMaze,
+  compareAlgorithms,
+} from "../utils/mazeAlgorithms";
 
 export default function Home() {
   const [maze, setMaze] = useState<number[][]>([]);
@@ -27,10 +32,20 @@ export default function Home() {
     rows: 15,
     cols: 15,
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalContent, setModalContent] = useState("");
+  const [gridSize, setGridSize] = useState(15);
 
   useEffect(() => {
     initializeMaze();
   }, []);
+
+  const showModal = (title, content) => {
+    setModalTitle(title);
+    setModalContent(content);
+    setIsModalOpen(true);
+  };
 
   const initializeMaze = () => {
     const { rows, cols } = mazeSize;
@@ -38,6 +53,19 @@ export default function Home() {
     setMaze(newMaze);
     setStartPos({ row: 0, col: 0 });
     setEndPos({ row: rows - 1, col: cols - 1 });
+    // Clear the previous visualization
+    setPath([]);
+    setVisited([]);
+  };
+
+  const handleGridSizeChange = (size) => {
+    if (isRunning) return;
+
+    setMazeSize({ rows: size, cols: size });
+    // Generate a new maze with the new size
+    setTimeout(() => {
+      initializeMaze();
+    }, 0);
   };
 
   const solveMazeWithAnimation = async () => {
@@ -52,7 +80,47 @@ export default function Home() {
       algorithm,
       setVisited,
       setPath,
-      speed
+      speed,
+      (algo) =>
+        showModal(
+          "Path Not Found",
+          `No path could be found using ${algo.toUpperCase()}`
+        )
+    );
+
+    setIsRunning(false);
+  };
+
+  const compareAlgorithmsAndDisplay = async () => {
+    setIsRunning(true);
+    setPath([]);
+    setVisited([]);
+
+    const results = await compareAlgorithms(
+      maze,
+      startPos,
+      endPos,
+      setVisited,
+      setPath,
+      speed,
+      (results) => {
+        const content = Object.entries(results)
+          .map(
+            ([name, result]) =>
+              `<div class="mb-2">
+              <strong>${name}:</strong> ${
+                result.found
+                  ? `Path found in ${result.time.toFixed(2)} ms (${
+                      result.path.length
+                    } steps)`
+                  : "No path found"
+              }
+            </div>`
+          )
+          .join("");
+
+        showModal("Algorithm Comparison Results", `<div>${content}</div>`);
+      }
     );
 
     setIsRunning(false);
@@ -102,6 +170,8 @@ export default function Home() {
           algorithm={algorithm}
           setAlgorithm={setAlgorithm}
           isRunning={isRunning}
+          gridSize={gridSize}
+          setGridSize={handleGridSizeChange}
         />
         <div className="flex justify-between items-center my-4">
           <button
@@ -127,6 +197,13 @@ export default function Home() {
             className="btn"
           >
             {isRunning ? "Solving..." : "Solve Maze"}
+          </button>
+          <button
+            onClick={compareAlgorithmsAndDisplay}
+            disabled={isRunning}
+            className="btn"
+          >
+            Compare Algorithms
           </button>
         </div>
         <div className="my-4">
@@ -168,6 +245,13 @@ export default function Home() {
             <div className="w-4 h-4 bg-yellow-500"></div> <span>Visited</span>
           </div>
         </div>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={modalTitle}
+        >
+          <div dangerouslySetInnerHTML={{ __html: modalContent }} />
+        </Modal>
       </main>
       <Footer />
     </div>
